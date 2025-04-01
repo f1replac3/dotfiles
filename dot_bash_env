@@ -1,0 +1,19 @@
+# ~/.bash_env
+
+# Add custom bin directories to PATH if not already present
+for dir in "$HOME/.local/bin" "$HOME/bin" "/usr/local/go/bin"; do
+  if [ -d "$dir" ] && [[ ":$PATH:" != *":$dir:"* ]]; then
+    PATH="$PATH:$dir"
+  fi
+done
+export PATH
+
+# Core environment variables
+export EDITOR=/usr/bin/vim
+export VISUAL=/usr/bin/vim
+export PAGER=/usr/bin/less
+
+# Locale or XDG vars (optional)
+# export LANG=en_US.UTF-8
+# export XDG_CONFIG_HOME="$HOME/.config"
+
