@@ -1,6 +1,9 @@
 " Much of this is pulled from tomnomnom dotfiles
 " and imxiaobo dotfiles
-" Vundle
+
+""""""""""""""""""
+" Vundle + Plugins
+""""""""""""""""""
 
 set nocompatible
 filetype off
@@ -23,179 +26,228 @@ Plugin 'TomNomNom/xoria256.vim'
 Plugin 'rust-lang/rust.vim'
 Plugin 'valloric/youcompleteme'
 Plugin 'udalov/kotlin-vim'
+Plugin 'ctrlpvim/ctrlp.vim'         " Fuzzy file and buffer nav
+Plugin 'jlanzarotta/bufexplorer'    " Visual buffer nav    
 
 call vundle#end()
 
 " Required for vundle
 filetype plugin indent on
-filetype plugin on
+
+
+""""""""""""""
+" Display + UI
+""""""""""""""
 
 " Highlighting
 syntax on
-
 set encoding=utf-8
 
 " Airline config
 let g:airline_powerline_fonts = 1
 let g:airline#extensions#tabline#enabled=1
 let g:airline_theme='powerlineish'
+let g:airline_detect_modified=1         " Show [+] on modified buffers
 
 " History
-set history=50
+set history=1000
 
 " Display
-set ls=2
-set showmode
-set showcmd
-set modeline
-set ruler
-set title
-set nu
+set ls=2            " Always show status line
+set showmode        " Show Mode: -- INSERT -- etc
+set showcmd         " Show partial command in last line
+set ruler           " Show cursor position
+set title           " Set terminal title to filename
+set nu              " Show line numbers
+set relativenumber  " Show relative line numbers compared to current line (current line = 0)
+
 
 " Line wrapping
 set nowrap
 set linebreak
+set showbreak=↪\ 
 
-" Auto indent what you can
-set autoindent
 
-" Searching
-set ignorecase
-set smartcase
-set gdefault
-set hlsearch
-set showmatch
+""""""""""""""""""""""
+" Security + Hardening
+""""""""""""""""""""""
 
-" Enable jumping into files in a search buffer
-set hidden
+set modeline        " Allow per-file overrides via modeline
+set modelines=5     " Only scan first/last 5 lines of file
+set nomodelineexpr  " Disallow : set expr= in modelines 
+set secure          " Restrict unsafe commands from modelines/autocmds (e.g., !shell)
 
-"Make backspace a bit nicer
-set backspace=eol,start,indent
+" Warn if shell is changed from baseline
+augroup DetectShellOverride
+  autocmd!
+  autocmd OptionSet shell if &shell !=# '/bin/bash' 
+        \ echomsg '⚠️  shell modified: ' . &shell |
+        \ call writefile(
+        \   [strftime('%F %T') . ' ⚠️ shell modified: ' . &shell],
+        \   expand('~/.vim/shell_override.log'),
+        \   'a'
+        \ )
+        \ | endif
+augroup END
 
-"Indentation
-set shiftwidth=4
-set tabstop=4
-set softtabstop=4
-set shiftround
-set expandtab
-set smartindent
+"""""""""""""""""""""""""""""""""""
+" Buffer Behavior + Indent Defaults
+"""""""""""""""""""""""""""""""""""
+set autoindent                  " Basic indent replication (default fallback)
+set hidden                      " Enable buffer switching without saving
+set backspace=eol,start,indent  " Make backspace a bit nicer
 
+"""""""""""""""""
+" Search Behavior
+"""""""""""""""""
+set ignorecase                  " Case-insensitive search
+set smartcase                   " If search contains uppercase
+set gdefault                    " Substitute globally by default
+set hlsearch                    " Highlight search matches
+set showmatch                   " Breifly jump to matching paren
+
+"""""""""""""
 " Colorscheme
-if &t_Co == 256
-    try
-        color xoria256
-    catch /^Vim\%((\a\+)\)\=:E185/
-        " Oh well
-    endtry
+"""""""""""""
+if has("termguicolors")
+  set termguicolors
 endif
+try
+  colorscheme xoria256
+catch /^Vim\%((\a\+)\)\=:E185/
+  echom "⚠️  Colorscheme 'xoria256' not found. Falling back to default."
+endtry
 
-" Switch Buffers
-map <leader>8 :enew<CR>
-map <leader>9 :bprevious<CR>
-map <leader>0 :bnext<CR>
-"Show all open buffers
-map <leader>o :ls<CR>
-"Close current buffer
-map <leader>p :bp <BAR> bd #<CR>
+"""""""""""""""""""""
+" Mappings + Commands
+"""""""""""""""""""""
+let mapleader = ","
+
+" Buffer Nav
+nnoremap <leader>be :enew<CR>               " Open scratch pad buffer
+nnoremap <leader>bp :bprevious<CR>          " Previous
+nnoremap <leader>bn :bnext<CR>              " Next
+nnoremap <leader>bl :ls<CR>                 " List ALL buffers
+nnoremap <leader>bd :bp \| bd #<CR>         " Delete current buffer safely
+nnoremap <leader>bb :BufExplorer<CR>        " Open visual buffer switcher
+
+" Split Navigation
+nnoremap <leader>sv :vsplit<Space>          " Vertical split
+nnoremap <leader>sh :split<Space>           " Horizontal split
+nnoremap <leader>so :only<CR>               " Close all splits but the current
+
 " Switch tabs
-map 8 <Esc>:tabe
-map 9 gT
-map 0 gt
+nnoremap <leader>tn :tabnew<CR>             " New tab
+nnoremap <leader>tc :tabclose<CR>           " Close tab
+nnoremap <leader>to :tabonly<CR>            " Close all tabs but the current
+nnoremap <leader>tl :tabprevious<CR>        " Previous tab
+nnoremap <leader>tr :tabnext<CR>            " Next tab           
+
+" Fuzzy Find (ctrlp)
+nnoremap <C-p> :CtrlP<CR>                   " Find files
+nnoremap <leader>fb :CtrlPBuffer<CR>        " Find from open buffers
+
+" Launch new tab in chosen directory
+command! -nargs=1 TabRepo tabnew | execute 'lcd' <q-args> | :NERDTree
+" example usage: :TabRepo ~/repos/sysadmin-playbooks
+
+nnoremap <leader>ub :TabRepo ~/src/github.com/f1replac3/ubuntu-provisioning<CR>
+nnoremap <leader>hl :TabRepo ~/src/github.com/f1replac3/homelab<CR>
+nnoremap <leader>n :NERDTreeToggle<CR>      " Toggle NerdTree
 
 " Open file under cursor in new tab
-map <F9> <Esc><C-W>gF<CR>:tabm<CR>
+nnoremap <F9> <Esc><C-W>gF<CR>:tabm<CR>
+" Open word under cursor as ctag in new tab
+nnoremap <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+
+
+" Chezmoi apply to .vimrc
+if exists('*VimrcApply') == 0
+  function! VimrcApply() abort
+    write
+    silent! execute '!chezmoi apply ~/.vimrc'
+    sleep 100m
+    source ~/.vimrc
+    echom "✔ .vimrc applied and reloaded"
+  endfunction
+
+  command! VimrcApply call VimrcApply()
+endif
+
+nnoremap <leader>ca :VimrcApply<CR>
+
 
 " Write current file with sudo perms
 command! W w
 command! -bang Qall qall
 
 " Fast saving
-nmap <leader>w :w!<cr>
+nnoremap <leader>w :w!<cr>
 " Fast quitting
-nmap <leader>q :q!<cr>
+nnoremap <leader>q :q!<cr>
 " Fast editing of the .vimrc
-map <leader>e :e! ~/.vimrc<cr>
-" When vimrc is edited, reload it
-autocmd! bufwritepost vimrc source ~/.vimrc
+nnoremap <leader>e :e! ~/.vimrc<cr>
+" When vimrc is edited, reload it (commented out because of chezmoi workflow)
+" autocmd! bufwritepost vimrc source ~/.vimrc
 
 " Select all:
-nmap <leader>a ggvG<cr>
+nnoremap <leader>a ggvG<cr>
 
+""""""""""""
 " Formatting
-set fo+=o       "automatically insert the current comment leader after hitting 'o' or 'O' in normal mode
-set fo-=r       "Do not automatically insert a comment leader after enter
-set fo-=t       "Do not auto-wrap text using textwidth (does not apply to comments)
-set nowrap
-set textwidth=0 "Don't wrap lines by default
+""""""""""""
 
-" Visual prompt for command completion
+set fo+=o       " Continue comment on 'o' or 'O'
+set fo-=r       " Don't auto-insert comment leader after <Enter>
+set fo-=t       " Don't auto-wrap text (use manual formatting)
+set nowrap      " Disable hard wrapping
+set textwidth=0 " No textwidth limit by default
+
+
+" Command Completion UI
 set wildmenu
 set wildmode=longest,list
 
+"""""""""""""""""""
+" Utility Shortcuts
+"""""""""""""""""""
+
 " Base64 decode word under cursor
-nmap <Leader>b :!echo <C-R><C-W> \| base64 -d<CR>
+nnoremap <Leader>b :!echo <C-R><C-W> \| base64 -d<CR>
 
 " grep recursively for word under cursor
-nmap <Leader>g :tabnew\|read !grep -Hnr '<C-R><C-W>'<CR>
+nnoremap <Leader>g :tabnew\|read !grep -Hnr '<C-R><C-W>'<CR>
 
 " sort the buffer removing duplicates
-nmap <Leader>s :%!sort -u --version-sort<CR>
+nnoremap <Leader>s :%!sort -u --version-sort<CR>
 
-" Open word under cursor as ctag in new tab
-map <C-\> :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+""""""""""""""""""""""""""
+" Compile & Run Dispatcher
+""""""""""""""""""""""""""
 
-" Python code
-augroup Python
-  autocmd BufReadPre,FileReadPre	*.py set tabstop=4
-  autocmd BufReadPre,FileReadPre	*.py set expandtab
-  autocmd BufReadPre,FileReadPre    *.py color slate
-augroup END
-" Java code.
-augroup java
-  autocmd BufReadPre,FileReadPre    *.java set tabstop=4
-  autocmd BufReadPre,FileReadPre    *.java set expandtab
-  autocmd BufReadPre,FileReadPre    *.java set autoindent
-  autocmd BufReadPre,FileReadPre    *.java color slate 
-  autocmd BufReadPre,FileReadPre    *.java set smartindent
-augroup END
-" Kotlin code
-augroup Kotlin
- autocmd BufReadPre,FileReadPre    *.kt set tabstop=4
- autocmd BufReadPre,FileReadPre    *.kt set expandtab 
- autocmd BufReadPre,FileReadPre    *.kt set autoindent 
- autocmd BufReadPre,FileReadPre    *.kt color slate 
- autocmd BufReadPre,FileReadPre    *.kt set smartindent
-augroup END
+nnoremap <F5> :call CompileRun()<CR>
 
-"augroup Bash
-"    autocmd BufReadPre,FileReadPre  *.sh set tabstop=4
-"    autocmd BufReadPre,FileReadPre  *.sh set expandtab
-"    autocmd BufReadPre,FileReadPre  *.sh set slate
+function! CompileRun() abort
+  write
+  let ft = &filetype
 
-" mappings
-map <F5> :call CompileRunGcc()<CR>
-func! CompileRunGcc()
-exec "w"
-if &filetype == 'c'
-exec "!gcc % -o %<"
-exec "!time ./%<"
-elseif &filetype == 'cpp'
-exec "!g++ % -o %<"
-exec "!time ./%<"
-elseif &filetype == 'java'
-exec "!javac %"
-exec "!time java -cp %:p:h %:t:r"
-elseif &filetype == 'sh'
-exec "!time bash %"
-elseif &filetype == 'python'
-exec "!time python2.7 %"
-elseif &filetype == 'html'
-exec "!firefox % &"
-elseif &filetype == 'go'
-exec "!go build %<"
-exec "!time go run %"
-elseif &filetype == 'mkd'
-exec "!~/.vim/markdown.pl % > %.html &"
-exec "!firefox %.html &"
-endif
-endfunc
+  if ft ==# 'c'
+    execute '!gcc % -o %< && time ./%<'
+  elseif ft ==# 'cpp'
+    execute '!g++ % -o %< && time ./%<'
+  elseif ft ==# 'java'
+    execute '!javac % && time java -cp %:p:h %:t:r'
+  elseif ft ==# 'sh'
+    execute '!bash %'
+  elseif ft ==# 'python'
+    execute '!python3 %'
+  elseif ft ==# 'html'
+    execute '!firefox % &'
+  elseif ft ==# 'go'
+    execute '!go build %< && time go run %'
+  elseif ft =~# 'markdown\|mkd'
+    execute '!~/.vim/markdown.pl % > %.html && firefox %.html &'
+  else
+    echom "❌ CompileRun not supported for filetype: " . ft
+  endif
+endfunction
