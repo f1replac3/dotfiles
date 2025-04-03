@@ -1,7 +1,7 @@
 # ~/.bash_env
 
 # Add custom bin directories to PATH if not already present
-for dir in "$HOME/.local/bin" "$HOME/bin" "/usr/local/go/bin"; do
+for dir in "$HOME/.local/bin" "$HOME/bin" "/usr/local/go/bin" "$HOME/go/bin"; do
   if [ -d "$dir" ] && [[ ":$PATH:" != *":$dir:"* ]]; then
     PATH="$PATH:$dir"
   fi
